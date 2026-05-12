@@ -21,7 +21,7 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
 
-TOKEN = "8733448156:AAFkVO59emlRIazwOVXGewwK0UGeEb5SAos"
+TOKEN = "8733448156:AAFkVO59emlRIazwOVXGewwK0UGeEb5SAos1"
 WEBAPP_URL = "https://fitness-miniapp.onrender.com/"
 ADMIN_IDS = [601663687]
 
