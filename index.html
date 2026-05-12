@@ -1,0 +1,275 @@
+
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Fitness Booking</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
+
+<style>
+
+body{
+margin:0;
+font-family:'Manrope',sans-serif;
+background:#f7f3ef;
+color:#111827;
+}
+
+.container{
+max-width:480px;
+margin:auto;
+padding:18px;
+padding-bottom:120px;
+}
+
+.title{
+font-size:42px;
+font-weight:800;
+margin-top:20px;
+margin-bottom:12px;
+line-height:1.05;
+}
+
+.card{
+background:white;
+padding:18px;
+border-radius:22px;
+margin-bottom:18px;
+}
+
+.grid{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:10px;
+}
+
+.slots{
+display:grid;
+grid-template-columns:1fr 1fr 1fr;
+gap:10px;
+}
+
+.btn{
+border:none;
+background:#f3f4f6;
+padding:15px;
+border-radius:18px;
+font-weight:700;
+}
+
+.btn.active{
+background:#111827;
+color:white;
+}
+
+.btn.disabled{
+opacity:0.3;
+pointer-events:none;
+}
+
+input,textarea{
+width:100%;
+border:none;
+background:#f3f4f6;
+padding:16px;
+border-radius:18px;
+margin-bottom:12px;
+font-family:'Manrope',sans-serif;
+}
+
+.submit{
+width:100%;
+background:#111827;
+color:white;
+border:none;
+padding:18px;
+border-radius:18px;
+font-weight:800;
+}
+
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<div class="title">
+Запис на<br>тренування
+</div>
+
+<div class="card">
+<input id="name" placeholder="Ваше ім'я">
+<input id="username" placeholder="@username Telegram">
+<textarea id="comment" placeholder="Побажання до тренування"></textarea>
+</div>
+
+<div class="card">
+<div class="grid" id="dates"></div>
+</div>
+
+<div class="card">
+<div class="slots" id="slots"></div>
+</div>
+
+<button class="submit" onclick="book()">
+✨ Підтвердити запис
+</button>
+
+</div>
+
+<script>
+
+const bookedSlots = {{ booked_slots|tojson }};
+
+let selectedDate = null;
+let selectedTime = null;
+
+function isPast(date,time){
+
+    return new Date(date+'T'+time)
+        <= new Date();
+}
+
+function loadDates(){
+
+    const wrap =
+        document.getElementById('dates');
+
+    for(let i=0;i<7;i++){
+
+        const d = new Date();
+        d.setDate(d.getDate()+i);
+
+        const api =
+            d.toISOString().split('T')[0];
+
+        const visual =
+            d.toLocaleDateString(
+                'uk-UA',
+                {
+                    day:'2-digit',
+                    month:'2-digit'
+                }
+            );
+
+        const btn =
+            document.createElement('button');
+
+        btn.className='btn';
+        btn.innerText=visual;
+
+        btn.onclick=()=>{
+
+            document.querySelectorAll('#dates .btn')
+            .forEach(x=>x.classList.remove('active'));
+
+            btn.classList.add('active');
+
+            selectedDate=api;
+
+            loadSlots();
+        };
+
+        wrap.appendChild(btn);
+    }
+}
+
+function loadSlots(){
+
+    const wrap =
+        document.getElementById('slots');
+
+    wrap.innerHTML='';
+
+    const arr = [
+        '10:00','11:00','12:00',
+        '13:00','14:00','15:00',
+        '16:00','17:00','18:00',
+        '19:00','20:00'
+    ];
+
+    arr.forEach(time=>{
+
+        const btn =
+            document.createElement('button');
+
+        btn.className='btn';
+        btn.innerText=time;
+
+        const key =
+            selectedDate + "|" + time;
+
+        if(
+            bookedSlots.includes(key)
+            || isPast(selectedDate,time)
+        ){
+            btn.classList.add('disabled');
+        }
+
+        btn.onclick=()=>{
+
+            if(btn.classList.contains('disabled')){
+                return;
+            }
+
+            document.querySelectorAll('#slots .btn')
+            .forEach(x=>x.classList.remove('active'));
+
+            btn.classList.add('active');
+
+            selectedTime=time;
+        };
+
+        wrap.appendChild(btn);
+    });
+}
+
+async function book(){
+
+    const name =
+        document.getElementById('name').value;
+
+    const username =
+        document.getElementById('username').value;
+
+    const comment =
+        document.getElementById('comment').value;
+
+    if(!name || !selectedDate || !selectedTime){
+        alert('Заповніть всі поля');
+        return;
+    }
+
+    const response = await fetch('/api/book',{
+        method:'POST',
+        headers:{
+            'Content-Type':'application/json'
+        },
+        body:JSON.stringify({
+            date:selectedDate,
+            time:selectedTime,
+            name:name,
+            username:username,
+            comment:comment
+        })
+    });
+
+    const data = await response.json();
+
+    if(data.success){
+        alert('🤍 Запис створено');
+        location.reload();
+    }else{
+        alert('Час зайнятий');
+    }
+}
+
+loadDates();
+
+</script>
+
+</body>
+</html>
